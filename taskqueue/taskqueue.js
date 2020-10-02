@@ -2,8 +2,10 @@ var moduleFunction = async(client, moduleLoader, config) => {
     var events = require('events');
     var eventEmitter = new events.EventEmitter();
     var { isArray, chunkify, sleep, asyncForEach } = require("./helpers")
-    const uuidv4 = require('uuid/v4');
+    const uuidv4 = require('uuid').v4;
     const { performance } = require('perf_hooks');
+
+    var debug_test = 0;
 
     class taskQueue {
         constructor(rate, time) {
@@ -23,17 +25,17 @@ var moduleFunction = async(client, moduleLoader, config) => {
             this.start();
         }
 
-        async addTask(taskFc, expectsReturn = false) {
+        async addTask(taskFc, expectsReturn = false, weight = 1, name = "DefaultTask") {
             var returnTask = null;
             if (isArray(taskFc)) {
                 returnTask = [];
                 taskFc.forEach(singletask => {
-                    var task = new Task(singletask);
+                    var task = new Task(singletask, name, weight);
                     returnTask.push(task.ts)
                     this.queue.push(task);
                 });
             } else {
-                var task = new Task(taskFc);
+                var task = new Task(taskFc, name, weight);
                 returnTask = task.ts;
                 this.queue.push(task);
             }
@@ -81,15 +83,17 @@ var moduleFunction = async(client, moduleLoader, config) => {
 
                 var b = performance.now();
                 this.uphead += b - a;
-
                 if (this.pastTasks >= this.rate) {
                     var sleepTime = this.time - this.uphead;
 
                     this.uphead = 0;
                     this.pastTasks = 0;
 
-                    if (sleepTime < this.time && sleepTime > 0)
+
+                    if (sleepTime < this.time && sleepTime > 0) {
+                        console.log("Too many tasks => Sleeping cycle for ", sleepTime)
                         await sleep(sleepTime);
+                    }
                 }
 
             });
@@ -100,10 +104,13 @@ var moduleFunction = async(client, moduleLoader, config) => {
     }
 
     class Task {
-        constructor(task) {
+        constructor(task, name, weight) {
             this.task = task;
             this.ts = uuidv4();
             this.do = this.do.bind(this);
+            this.name = name;
+            this.time = Date.now();
+            this.weight = weight;
 
             return this;
         }
