@@ -58,6 +58,30 @@ class Recent {
     }
 }
 
+function to(promise) {
+    return promise
+        .then(data => {
+            return [null, data];
+        })
+        .catch(err => [err]);
+}
+
+function limitLength(what, min, max) {
+    if (typeof what != "string")
+        return false;
+
+    if (!what.length)
+        return false;
+
+    if (what.length > max)
+        return false;
+
+    if (what.length < min)
+        return false;
+
+    return true;
+}
+
 class Byte {
     constructor(data) {
         if (!isArray(data)) throw new Error("Byte input needs to be array");
@@ -116,9 +140,58 @@ class Enum {
     }
 }
 
+YouTubeGetID = function(url) {
+    var ID = '';
+    console.log(url, "TEST")
+    url = url.replace(/(>|<)/gi, '').split(/(vi\/|v=|\/v\/|youtu\.be\/|\/embed\/)/);
+    if (url[2] !== undefined) {
+        ID = url[2].split(/[^0-9a-z_\-]/i);
+        ID = ID[0];
+        return ID;
+    }
+    return url;
+}
+
+function arrayContainsArray(superset, subset) {
+    if (!superset || !subset)
+        return false;
+    return subset.every(function(value) {
+        return superset.indexOf(value) >= 0;
+    });
+}
+
+function chunkify(arr, len) {
+
+    var chunks = [],
+        i = 0,
+        n = arr.length;
+
+    while (i < n) {
+        chunks.push(arr.slice(i, i += len));
+    }
+
+    return chunks;
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function asyncForEach(array, callback) {
+    for (let index = 0; index < array.length; index++) {
+        await callback(array[index], index, array);
+    }
+}
+
 module.exports = {
     Recent: Recent,
     Lock: Lock,
     Enum: Enum,
     Byte: Byte,
+    YouTubeGetID: YouTubeGetID,
+    arrayContainsArray: arrayContainsArray,
+    to: to,
+    limitLength: limitLength,
+    chunkify: chunkify,
+    sleep: sleep
 };
