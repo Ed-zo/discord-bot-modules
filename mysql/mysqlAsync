@@ -1,0 +1,52 @@
+var moduleFunction = async(client, moduleLoader, config) => {
+    const mysql = require("mysql2/promise");
+
+    var pool = mysql.createPool(config.mysql);
+
+    pool.on("error", function(err) {
+        //console.log(err.code); // 'ER_BAD_DB_ERROR'
+    });
+
+    pool.exec = (sql, params = null) => {
+        return new Promise(async(resolve, reject) => {
+            pool
+                .execute(sql, params)
+                .then((result) => {
+                    resolve(result[0])
+                })
+                .catch((err) => {
+                    reject(err);
+                });
+        });
+    };
+
+    pool.newQuery = (sql, params = null) => {
+        return new Promise(async(resolve, reject) => {
+            pool
+                .query(sql, params)
+                .then((result) => {
+                    resolve(result[0])
+                })
+                .catch((err) => {
+                    reject(err);
+                });
+        });
+    };
+
+    return {
+        name: "MYSQL",
+        exports: {
+            pool: pool,
+        },
+        unload: async() => {
+            pool.end();
+            return true;
+        },
+    };
+};
+
+module.exports = {
+    module: moduleFunction,
+    requires: [],
+    code: "MYSQL.JS",
+};
